@@ -6,7 +6,7 @@ Onde em uma breve descrição ele é um jogo simples mas interessante pois em su
 Muito divertido de jogar; com atualização de ponstos na tela e se a cobrinha bater no próprio corpo ou nas paredes o jogo se encerra, deixando um jogo simples mais divertido, difícil e desafiador.
 ---
 ## Demonstração do jogo 📸 
-![Game play](./assets/jogosnake.gif)
+
 ---
 ## Tecnologias usadas 🛠️ 
 
