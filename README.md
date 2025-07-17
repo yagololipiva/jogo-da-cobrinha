@@ -1,4 +1,4 @@
-# Jogo snake 🐍
+# Jogo Da Cobrinha 🐍
 
 ## considerações primárias:
 Fiz esse código para o projeto final do meu curso de python.
