@@ -1,117 +1,210 @@
-#configurações iniciais
 import pygame
 import random
+import os
 
-from pygame.gfxdraw import pixel
 pygame.init()
-pygame.display.set_caption("jogo snake em python")
-largura, altura  = 1200, 700
+pygame.mixer.init()
+
+# Cores
+COR_FUNDO = (30, 30, 30)
+COR_TEXTO = (255, 255, 255)
+COR_COBRA = (0, 255, 100)
+COR_COMIDA = (255, 80, 80)
+COR_BOTAO = (70, 130, 180)
+COR_BOTAO_HOVER = (90, 150, 200)
+COR_BOTAO_MUTE = (180, 180, 0)
+
+# Tela
+largura, altura = 600, 400
 tela = pygame.display.set_mode((largura, altura))
+pygame.display.set_caption("Jogo da Cobrinha")
+
+# Configurações
 relogio = pygame.time.Clock()
-
-#cores RGB
-preta = (0, 0 ,0)
-branca = (255, 255, 255)
-vermelho = (255, 0 , 0)
-verde = (0, 255, 0)
-azul = (0, 0, 255)
-
-#parametros da cobrinha
-tamanho_quadrado = 10
+tamanho_quadrado = 20
 velocidade_jogo = 15
 
+# Fontes
+fonte_pontos = pygame.font.SysFont("consolas", 24, bold=True)
+fonte_game_over = pygame.font.SysFont("arial", 48, bold=True)
+fonte_botao = pygame.font.SysFont("arial", 24, bold=True)
+fonte_menu = pygame.font.SysFont("arial", 36, bold=True)
+
+# Sons
+som_comida = pygame.mixer.Sound("comida.wav")
+som_game_over = pygame.mixer.Sound("game_over.wav")
+pygame.mixer.music.load("fundo.wav")
+
+# Mute flag
+mutado = False
+
+# Recorde
+arquivo_recorde = "recorde.txt"
+def carregar_recorde():
+    if os.path.exists(arquivo_recorde):
+        with open(arquivo_recorde, "r") as f:
+            return int(f.read())
+    return 0
+
+def salvar_recorde(pontos):
+    with open(arquivo_recorde, "w") as f:
+        f.write(str(pontos))
+
+def desenhar_cobra(lista_pixels):
+    for pixel in lista_pixels:
+        pygame.draw.rect(tela, COR_COBRA, [pixel[0], pixel[1], tamanho_quadrado, tamanho_quadrado], border_radius=4)
+
 def gerar_comida():
-    comida_x = round(random.randrange(0, largura - tamanho_quadrado) / float(tamanho_quadrado)) * float(tamanho_quadrado)
-    comida_y = round(random.randrange(0, altura - tamanho_quadrado)/ float(tamanho_quadrado)) * float(tamanho_quadrado)
+    comida_x = round(random.randrange(0, largura - tamanho_quadrado) / 20.0) * 20.0
+    comida_y = round(random.randrange(0, altura - tamanho_quadrado) / 20.0) * 20.0
     return comida_x, comida_y
 
-def desenhar_comida(tamanho, comida_x, comida_y):
-    pygame.draw.rect(tela, verde, [comida_x, comida_y, tamanho, tamanho])
+def desenhar_comida(x, y):
+    pygame.draw.rect(tela, COR_COMIDA, [x, y, tamanho_quadrado, tamanho_quadrado], border_radius=6)
 
+def desenhar_pontos(pontos, recorde):
+    texto = fonte_pontos.render(f"Pontos: {pontos}   Recorde: {recorde}", True, COR_TEXTO)
+    tela.blit(texto, (10, 10))
 
-def desenhar_cobra(tamanho, pixels):
-    for pixel in pixels:
-        pygame.draw.rect(tela ,branca, [pixel[0], pixel[1], tamanho, tamanho])
+def desenhar_botao_mute(mute):
+    texto = "🔇" if mute else "🔊"
+    botao_texto = fonte_pontos.render(texto, True, COR_BOTAO_MUTE)
+    botao_rect = pygame.Rect(largura - 50, 10, 40, 40)
+    pygame.draw.rect(tela, COR_FUNDO, botao_rect)
+    tela.blit(botao_texto, (botao_rect.x + 10, botao_rect.y + 5))
+    return botao_rect
 
-def desenhar_pontos(pontos):
-    fonte = pygame.font.SysFont("Arial", 25)
-    texto = fonte.render(f"Pontos: {pontos}", True, vermelho)
-    tela.blit(texto, [1,1])
+def mostrar_game_over(pontos, recorde):
+    tela.fill(COR_FUNDO)
+    texto = fonte_game_over.render("Fim de Jogo", True, COR_COMIDA)
+    tela.blit(texto, (largura // 2 - texto.get_width() // 2, altura // 2 - 80))
 
-def selecionar_velocidade(tecla):
-    #deslocamentos(cima, baixo, esquerda, direita):
-    if tecla == pygame.K_DOWN:
-        velocidade_x = 0
-        velocidade_y = tamanho_quadrado
+    if pontos > recorde:
+        salvar_recorde(pontos)
+        recorde = pontos
 
-    elif tecla == pygame.K_UP:
-        velocidade_x = 0
-        velocidade_y = -tamanho_quadrado
+    texto_recorde = fonte_botao.render(f"Seu placar: {pontos}  |  Recorde: {recorde}", True, COR_TEXTO)
+    tela.blit(texto_recorde, (largura // 2 - texto_recorde.get_width() // 2, altura // 2 - 30))
 
-    elif tecla == pygame.K_RIGHT:
-        velocidade_x = +tamanho_quadrado
-        velocidade_y = 0
+    texto_botao = fonte_botao.render("Reiniciar (Enter)", True, COR_TEXTO)
+    botao_rect = pygame.Rect(largura // 2 - 150, altura // 2 + 30, 300, 50)
 
-    elif tecla == pygame.K_LEFT:
-        velocidade_x = -tamanho_quadrado
-        velocidade_y = 0
+    mouse_pos = pygame.mouse.get_pos()
+    cor_botao = COR_BOTAO_HOVER if botao_rect.collidepoint(mouse_pos) else COR_BOTAO
+    pygame.draw.rect(tela, cor_botao, botao_rect, border_radius=10)
+    tela.blit(texto_botao, (botao_rect.centerx - texto_botao.get_width() // 2,
+                            botao_rect.centery - texto_botao.get_height() // 2))
+    return botao_rect
 
-    return velocidade_x, velocidade_y
+def menu_inicial():
+    tela.fill(COR_FUNDO)
+    titulo = fonte_menu.render("Jogo da Cobrinha", True, COR_COBRA)
+    botao_texto = fonte_botao.render("Jogar", True, COR_TEXTO)
+    botao_rect = pygame.Rect(largura // 2 - 100, altura // 2, 200, 50)
 
-def rodar_jogo():
-    fim_do_jogo = False
-    x = largura / 2
-    y = altura / 2
-
-    velocidade_x = 0
-    velocidade_y = 0
-
-    tamanho_cobra = 1
-    pixels = []
-
-    comida_x, comida_y = gerar_comida()
-
-
-    while not fim_do_jogo:
-        tela.fill(preta)
-        for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
-                fim_do_jogo = True
-            elif evento.type == pygame.KEYDOWN:
-                velocidade_x, velocidade_y = selecionar_velocidade(evento.key)
-
-        #desenhar_comida
-        desenhar_comida(tamanho_quadrado, comida_x, comida_y)
-
-        #atualizar a posicao da cobra
-        if x < 0 or x >= largura or y < 0 or y >= altura:
-            fim_do_jogo = True
-
-        x += velocidade_x
-        y += velocidade_y
-
-        #desenhar_cobra
-        pixels.append([x,y])
-        if len(pixels) > tamanho_cobra:
-            del pixels[0]
-
-        #se a cobrinha bateu no proprio corpo
-        for pixel in pixels[:-1]:
-            if pixel == [x, y]:
-                fim_do_jogo = True
-        desenhar_cobra(tamanho_quadrado, pixels)
-
-        #desenhar_pontos
-        desenhar_pontos(tamanho_cobra - 1)
-
-        #atualização_tela
+    while True:
+        tela.fill(COR_FUNDO)
+        tela.blit(titulo, (largura // 2 - titulo.get_width() // 2, altura // 3 - 40))
+        mouse_pos = pygame.mouse.get_pos()
+        cor = COR_BOTAO_HOVER if botao_rect.collidepoint(mouse_pos) else COR_BOTAO
+        pygame.draw.rect(tela, cor, botao_rect, border_radius=10)
+        tela.blit(botao_texto, (botao_rect.centerx - botao_texto.get_width() // 2,
+                                botao_rect.centery - botao_texto.get_height() // 2))
         pygame.display.update()
 
-        #criar uma nova comida
-        if x == comida_x and y == comida_y:
-            tamanho_cobra += 1
-            comida_x, comida_y = gerar_comida()
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif evento.type == pygame.MOUSEBUTTONDOWN:
+                if botao_rect.collidepoint(evento.pos):
+                    return
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key in [pygame.K_RETURN, pygame.K_SPACE]:
+                    return
 
+def rodar_jogo():
+    global mutado
+    if not mutado:
+        pygame.mixer.music.play(-1)
+
+    fim_do_jogo = False
+    x, y = largura // 2, altura // 2
+    velocidade_x = velocidade_y = 0
+    tamanho_cobra = 1
+    pixels = []
+    comida_x, comida_y = gerar_comida()
+    recorde = carregar_recorde()
+
+    while True:
+        tela.fill(COR_FUNDO)
+        desenhar_comida(comida_x, comida_y)
+        desenhar_cobra(pixels)
+        desenhar_pontos(tamanho_cobra - 1, recorde)
+        botao_mute = desenhar_botao_mute(mutado)
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            elif evento.type == pygame.MOUSEBUTTONDOWN:
+                if botao_mute.collidepoint(evento.pos):
+                    mutado = not mutado
+                    if mutado:
+                        pygame.mixer.music.set_volume(0)
+                    else:
+                        pygame.mixer.music.set_volume(1)
+
+            elif evento.type == pygame.KEYDOWN and not fim_do_jogo:
+                if evento.key == pygame.K_LEFT and velocidade_x == 0:
+                    velocidade_x, velocidade_y = -tamanho_quadrado, 0
+                elif evento.key == pygame.K_RIGHT and velocidade_x == 0:
+                    velocidade_x, velocidade_y = tamanho_quadrado, 0
+                elif evento.key == pygame.K_UP and velocidade_y == 0:
+                    velocidade_y, velocidade_x = -tamanho_quadrado, 0
+                elif evento.key == pygame.K_DOWN and velocidade_y == 0:
+                    velocidade_y, velocidade_x = tamanho_quadrado, 0
+
+            elif fim_do_jogo:
+                if evento.type == pygame.KEYDOWN:
+                    if evento.key in [pygame.K_RETURN, pygame.K_SPACE]:
+                        return
+                elif evento.type == pygame.MOUSEBUTTONDOWN:
+                    if botao_game_over.collidepoint(evento.pos):
+                        return
+
+        if not fim_do_jogo:
+            x += velocidade_x
+            y += velocidade_y
+
+            if x < 0 or x >= largura or y < 0 or y >= altura:
+                fim_do_jogo = True
+                if not mutado:
+                    som_game_over.play()
+
+            pixels.append([x, y])
+            if len(pixels) > tamanho_cobra:
+                del pixels[0]
+
+            for pixel in pixels[:-1]:
+                if pixel == [x, y]:
+                    fim_do_jogo = True
+                    if not mutado:
+                        som_game_over.play()
+
+            if x == comida_x and y == comida_y:
+                tamanho_cobra += 1
+                comida_x, comida_y = gerar_comida()
+                if not mutado:
+                    som_comida.play()
+        else:
+            botao_game_over = mostrar_game_over(tamanho_cobra - 1, recorde)
+
+        pygame.display.update()
         relogio.tick(velocidade_jogo)
 
-rodar_jogo()
+# Execução
+menu_inicial()
+while True:
+    rodar_jogo()
