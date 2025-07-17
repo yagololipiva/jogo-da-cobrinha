@@ -4,7 +4,3 @@ Onde em uma breve descrição ele é um jogo simples mas interessante pois em su
 Muito divertido de jogar com atualização de ponstos na tela e se a cobrinha bater no próprio corpo ou nas paredes o jogo se encerra, deixando um jogo simples mais divertido, difícil e desafiador.
 ## 📸 Demonstração
 ![Demonstração do jogo](./assets/jogosnake.gif)
-git add assets/jogosnake.gif
-git commit -m "Adicionando gif de demonstração do jogo"
-git push
-
