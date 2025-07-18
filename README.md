@@ -28,8 +28,7 @@ pip install pygame
 ```bash
 python main.py
 ```
-
-
-
-
-
+## Autor:
+```bash
+Yago loli Piva
+```
