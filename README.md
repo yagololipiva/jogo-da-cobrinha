@@ -30,5 +30,5 @@ python main.py
 ```
 ## Autor:
 ```bash
-Yago loli Piva
+Yago Loli Piva
 ```
