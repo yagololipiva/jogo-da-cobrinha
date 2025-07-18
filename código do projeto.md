@@ -1,6 +1,4 @@
-# Snake Game em Python 🐍
-
-## 🎮 Código principal:
+# 🎮 Código do projeto:
 ---
 
 ```python
@@ -121,4 +119,3 @@ def rodar_jogo():
         relogio.tick(velocidade_jogo)
 
 rodar_jogo()
----
